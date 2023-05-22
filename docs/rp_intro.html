@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Runtime parameters &mdash; Microphysics  documentation</title>
@@ -12,16 +12,16 @@
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="ForwardEuler" href="runtime_parameters.html" />
+    <link rel="next" title="BackwardEuler" href="runtime_parameters.html" />
     <link rel="prev" title="Data Structures" href="data_structures.html" /> 
 </head>
 
@@ -31,11 +31,15 @@
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
 
-            <a href="index.html" class="icon icon-home"> Microphysics
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Microphysics
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -51,12 +55,15 @@
 <li class="toctree-l1"><a class="reference internal" href="basics.html">StarKiller Basics</a></li>
 <li class="toctree-l1"><a class="reference internal" href="data_structures.html">Data Structures</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Runtime parameters</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html">ForwardEuler</a></li>
+<li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html">BackwardEuler</a></li>
+<li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#forwardeuler">ForwardEuler</a></li>
 <li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#qss">QSS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#vode">VODE</a></li>
 <li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#aprox19">aprox19</a></li>
+<li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#ase">ase</a></li>
 <li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#breakout">breakout</a></li>
 <li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#burn-cell">burn_cell</a></li>
+<li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#burn-cell-primordial-chem">burn_cell_primordial_chem</a></li>
 <li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#burn-cell-sdc">burn_cell_sdc</a></li>
 <li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#cj-detonation">cj_detonation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#constant">constant</a></li>
@@ -65,18 +72,26 @@
 <li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#gamma-law">gamma_law</a></li>
 <li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#helmholtz">helmholtz</a></li>
 <li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#integration">integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#make-table">make_table</a></li>
 <li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#multigamma">multigamma</a></li>
 <li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#networks">networks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#nse-solver">nse_solver</a></li>
 <li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#polytrope">polytrope</a></li>
 <li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#powerlaw">powerlaw</a></li>
-<li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#python-library">python_library</a></li>
+<li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#primordial-chem">primordial_chem</a></li>
 <li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#rad-power-law">rad_power_law</a></li>
 <li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#rprox">rprox</a></li>
-<li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#subch2">subch2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#subch-approx">subch_approx</a></li>
+<li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#subch-full">subch_full</a></li>
+<li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#subch-simple">subch_simple</a></li>
 <li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#test-aprox-rates">test_aprox_rates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#test-ase">test_ase</a></li>
 <li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#test-conductivity">test_conductivity</a></li>
 <li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#test-eos">test_eos</a></li>
 <li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#test-jac">test_jac</a></li>
+<li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#test-nse">test_nse</a></li>
+<li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#test-nse-interp">test_nse_interp</a></li>
+<li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#test-part-func">test_part_func</a></li>
 <li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#test-react">test_react</a></li>
 <li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#test-rhs">test_rhs</a></li>
 <li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#test-screening">test_screening</a></li>
@@ -84,6 +99,7 @@
 <li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#test-sdc-vode-rhs">test_sdc_vode_rhs</a></li>
 <li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#tillotson">tillotson</a></li>
 <li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#triple-alpha-plus-cago">triple_alpha_plus_cago</a></li>
+<li class="toctree-l2"><a class="reference internal" href="runtime_parameters.html#unit-test">unit_test</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="eos.html">Equations of State</a></li>
@@ -112,8 +128,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Runtime parameters</li>
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Runtime parameters</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/rp_intro.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -123,36 +139,12 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  
-<style>
-/* CSS overrides for sphinx_rtd_theme */
-
-/* 24px margin */
-.nbinput.nblast.container,
-.nboutput.nblast.container {
-    margin-bottom: 19px;  /* padding has already 5px */
-}
-
-/* ... except between code cells! */
-.nblast.container + .nbinput.container {
-    margin-top: -19px;
-}
-
-.admonition > p:before {
-    margin-right: 4px;  /* make room for the exclamation icon */
-}
-
-/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
-.math {
-    text-align: unset;
-}
-</style>
-<section id="runtime-parameters">
-<h1>Runtime parameters<a class="headerlink" href="#runtime-parameters" title="Permalink to this heading">¶</a></h1>
+  <section id="runtime-parameters">
+<h1>Runtime parameters<a class="headerlink" href="#runtime-parameters" title="Permalink to this heading"></a></h1>
 <p>The behavior of the network and EOS are controlled by many runtime
 parameters. These parameters are defined in plain-text files
 <code class="docutils literal notranslate"><span class="pre">_parameters</span></code> located in the different directories that hold the
-microphysics code. At compile time, a script in the AMReX bulid
+microphysics code. At compile time, a script in the AMReX build
 system, findparams.py, locates all of the <code class="docutils literal notranslate"><span class="pre">_parameters</span></code> files that
 are needed for the given choice of network, integrator, and EOS, and
 assembles all of the runtime parameters into a set of header files
@@ -170,12 +162,15 @@ specific implementations to override the general parameter defaults.</p>
 in the <code class="docutils literal notranslate"><span class="pre">_parameters</span></code> files.</p>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html">ForwardEuler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html">BackwardEuler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#forwardeuler">ForwardEuler</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#qss">QSS</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#vode">VODE</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#aprox19">aprox19</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#ase">ase</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#breakout">breakout</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#burn-cell">burn_cell</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#burn-cell-primordial-chem">burn_cell_primordial_chem</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#burn-cell-sdc">burn_cell_sdc</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#cj-detonation">cj_detonation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#constant">constant</a></li>
@@ -184,18 +179,26 @@ in the <code class="docutils literal notranslate"><span class="pre">_parameters<
 <li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#gamma-law">gamma_law</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#helmholtz">helmholtz</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#integration">integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#make-table">make_table</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#multigamma">multigamma</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#networks">networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#nse-solver">nse_solver</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#polytrope">polytrope</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#powerlaw">powerlaw</a></li>
-<li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#python-library">python_library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#primordial-chem">primordial_chem</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#rad-power-law">rad_power_law</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#rprox">rprox</a></li>
-<li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#subch2">subch2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#subch-approx">subch_approx</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#subch-full">subch_full</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#subch-simple">subch_simple</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#test-aprox-rates">test_aprox_rates</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#test-ase">test_ase</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#test-conductivity">test_conductivity</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#test-eos">test_eos</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#test-jac">test_jac</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#test-nse">test_nse</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#test-nse-interp">test_nse_interp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#test-part-func">test_part_func</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#test-react">test_react</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#test-rhs">test_rhs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#test-screening">test_screening</a></li>
@@ -203,6 +206,7 @@ in the <code class="docutils literal notranslate"><span class="pre">_parameters<
 <li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#test-sdc-vode-rhs">test_sdc_vode_rhs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#tillotson">tillotson</a></li>
 <li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#triple-alpha-plus-cago">triple_alpha_plus_cago</a></li>
+<li class="toctree-l1"><a class="reference internal" href="runtime_parameters.html#unit-test">unit_test</a></li>
 </ul>
 </div>
 </section>
@@ -212,7 +216,7 @@ in the <code class="docutils literal notranslate"><span class="pre">_parameters<
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="data_structures.html" class="btn btn-neutral float-left" title="Data Structures" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="runtime_parameters.html" class="btn btn-neutral float-right" title="ForwardEuler" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="runtime_parameters.html" class="btn btn-neutral float-right" title="BackwardEuler" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
