@@ -2,8 +2,15 @@
 #define ROSENBROCK_INTEGRATOR_H
 
 #include <AMReX_Algorithm.H>
+#if !defined(AMREX_USE_GPU)
+#include <AMReX_BLProfiler.H>
+#endif
 
 #include <cmath>
+#if !defined(AMREX_USE_GPU)
+#include <iomanip>
+#include <iostream>
+#endif
 #include <limits>
 
 #include <network.H>
@@ -24,8 +31,15 @@
 #endif
 
 #include <integrator_data.H>
+#include <initial_timestep.H>
 #include <rosenbrock_type.H>
 #include <rosenbrock_tableau.H>
+
+#if !defined(AMREX_USE_GPU)
+#define ROSENBROCK_BL_PROFILE(name) BL_PROFILE(name)
+#else
+#define ROSENBROCK_BL_PROFILE(name) ((void)0)
+#endif
 
 namespace rosenbrock {
 
@@ -126,14 +140,34 @@ template <typename RosenbrockT>
 AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE
 amrex::Real rtol_for (const RosenbrockT& rstate, const int n)
 {
+#ifdef PHOTOCHEMISTRY
+    if (n <= NumSpec) {
+        return rstate.rtol_spec;
+    }
+    if (n == net_ienuc) {
+        return rstate.rtol_enuc;
+    }
+    return rstate.rtol_rad_num;
+#else
     return n == net_ienuc ? rstate.rtol_enuc : rstate.rtol_spec;
+#endif
 }
 
 template <typename RosenbrockT>
 AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE
 amrex::Real atol_for (const RosenbrockT& rstate, const int n)
 {
+#ifdef PHOTOCHEMISTRY
+    if (n <= NumSpec) {
+        return rstate.atol_spec;
+    }
+    if (n == net_ienuc) {
+        return rstate.atol_enuc;
+    }
+    return rstate.atol_rad_num;
+#else
     return n == net_ienuc ? rstate.atol_enuc : rstate.atol_spec;
+#endif
 }
 
 template <int int_neqs>
@@ -244,13 +278,21 @@ template <typename BurnT, int int_neqs>
 AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE
 void evaluate_jacobian (BurnT& state, rosenbrock_t<int_neqs>& rstate, const amrex::Real time)
 {
+    ROSENBROCK_BL_PROFILE("Rosenbrock::evaluate_jacobian()");
+
     constexpr bool in_jacobian = true;
 
-    rhs(time, state, rstate, rstate.ak1, in_jacobian);
+    {
+        ROSENBROCK_BL_PROFILE("Rosenbrock::rhs(jacobian_base)");
+        rhs(time, state, rstate, rstate.ak1, in_jacobian);
+    }
     rstate.n_rhs += 1;
 
     if (rstate.jacobian_type == 1) {
-        jac(time, state, rstate, rstate.jac);
+        {
+            ROSENBROCK_BL_PROFILE("Rosenbrock::jacobian_analytic()");
+            jac(time, state, rstate, rstate.jac);
+        }
         rstate.n_jac += 1;
 
         if (matrix_is_finite<decltype(rstate.jac), int_neqs>(rstate.jac)) {
@@ -280,23 +322,29 @@ void evaluate_jacobian (BurnT& state, rosenbrock_t<int_neqs>& rstate, const amre
         R0 = 1.0_rt;
     }
 
-    for (int j = 1; j <= int_neqs; ++j) {
-        const amrex::Real yj = ybase(j);
-        const amrex::Real R = amrex::max(std::sqrt(UROUND) * std::abs(yj), R0 / ewt(j));
-        for (int n = 1; n <= int_neqs; ++n) {
-            rstate.y(n) = ybase(n);
-        }
-        rstate.y(j) += R;
+    {
+        ROSENBROCK_BL_PROFILE("Rosenbrock::jacobian_finite_difference()");
+        for (int j = 1; j <= int_neqs; ++j) {
+            const amrex::Real yj = ybase(j);
+            const amrex::Real R = amrex::max(std::sqrt(UROUND) * std::abs(yj), R0 / ewt(j));
+            for (int n = 1; n <= int_neqs; ++n) {
+                rstate.y(n) = ybase(n);
+            }
+            rstate.y(j) += R;
 
-        rhs(time, state, rstate, rstate.work, in_jacobian);
+            {
+                ROSENBROCK_BL_PROFILE("Rosenbrock::rhs(jacobian_fd)");
+                rhs(time, state, rstate, rstate.work, in_jacobian);
+            }
 
-        fac = 1.0_rt / R;
-        for (int i = 1; i <= int_neqs; ++i) {
-            rstate.jac.set(i, j, (rstate.work(i) - rstate.ak1(i)) * fac);
-        }
+            fac = 1.0_rt / R;
+            for (int i = 1; i <= int_neqs; ++i) {
+                rstate.jac.set(i, j, (rstate.work(i) - rstate.ak1(i)) * fac);
+            }
 
-        for (int n = 1; n <= int_neqs; ++n) {
-            rstate.y(n) = ybase(n);
+            for (int n = 1; n <= int_neqs; ++n) {
+                rstate.y(n) = ybase(n);
+            }
         }
     }
 
@@ -310,6 +358,8 @@ void rhs_at (const amrex::Real time, BurnT& state, rosenbrock_t<int_neqs>& rstat
              const amrex::Array1D<amrex::Real, 1, int_neqs>& y,
              amrex::Array1D<amrex::Real, 1, int_neqs>& ydot)
 {
+    ROSENBROCK_BL_PROFILE("Rosenbrock::rhs_at()");
+
     amrex::Array1D<amrex::Real, 1, int_neqs> ysave;
 
     for (int n = 1; n <= int_neqs; ++n) {
@@ -317,7 +367,10 @@ void rhs_at (const amrex::Real time, BurnT& state, rosenbrock_t<int_neqs>& rstat
         rstate.y(n) = y(n);
     }
 
-    rhs(time, state, rstate, ydot);
+    {
+        ROSENBROCK_BL_PROFILE("Rosenbrock::rhs(stage)");
+        rhs(time, state, rstate, ydot);
+    }
 
     for (int n = 1; n <= int_neqs; ++n) {
         rstate.y(n) = ysave(n);
@@ -328,6 +381,8 @@ template <int int_neqs>
 AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE
 int decompose (rosenbrock_t<int_neqs>& rstate, const amrex::Real fac)
 {
+    ROSENBROCK_BL_PROFILE("Rosenbrock::decompose()");
+
     for (int j = 1; j <= int_neqs; ++j) {
         for (int i = 1; i <= int_neqs; ++i) {
             rstate.jac(i, j) = -rstate.jac(i, j);
@@ -336,12 +391,15 @@ int decompose (rosenbrock_t<int_neqs>& rstate, const amrex::Real fac)
     }
 
     int ierr_linpack = 0;
-    if (integrator_rp::linalg_do_pivoting == 1) {
-        constexpr bool allow_pivot{true};
-        dgefa<int_neqs, allow_pivot>(rstate.jac, rstate.pivot, ierr_linpack);
-    } else {
-        constexpr bool allow_pivot{false};
-        dgefa<int_neqs, allow_pivot>(rstate.jac, rstate.pivot, ierr_linpack);
+    {
+        ROSENBROCK_BL_PROFILE("Rosenbrock::dgefa()");
+        if (integrator_rp::linalg_do_pivoting == 1) {
+            constexpr bool allow_pivot{true};
+            dgefa<int_neqs, allow_pivot>(rstate.jac, rstate.pivot, ierr_linpack);
+        } else {
+            constexpr bool allow_pivot{false};
+            dgefa<int_neqs, allow_pivot>(rstate.jac, rstate.pivot, ierr_linpack);
+        }
     }
 
     return ierr_linpack;
@@ -351,12 +409,17 @@ template <int int_neqs>
 AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE
 void solve (rosenbrock_t<int_neqs>& rstate, RArray1D& b)
 {
-    if (integrator_rp::linalg_do_pivoting == 1) {
-        constexpr bool allow_pivot{true};
-        dgesl<int_neqs, allow_pivot>(rstate.jac, rstate.pivot, b);
-    } else {
-        constexpr bool allow_pivot{false};
-        dgesl<int_neqs, allow_pivot>(rstate.jac, rstate.pivot, b);
+    ROSENBROCK_BL_PROFILE("Rosenbrock::solve()");
+
+    {
+        ROSENBROCK_BL_PROFILE("Rosenbrock::dgesl()");
+        if (integrator_rp::linalg_do_pivoting == 1) {
+            constexpr bool allow_pivot{true};
+            dgesl<int_neqs, allow_pivot>(rstate.jac, rstate.pivot, b);
+        } else {
+            constexpr bool allow_pivot{false};
+            dgesl<int_neqs, allow_pivot>(rstate.jac, rstate.pivot, b);
+        }
     }
 }
 
@@ -366,6 +429,8 @@ template <typename BurnT, typename Tableau>
 AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE
 int rosenbrock_integrator (BurnT& state, rosenbrock_t<integrator_neqs<BurnT>()>& rstate)
 {
+    ROSENBROCK_BL_PROFILE("Rosenbrock::integrator()");
+
     using C = Tableau;
     constexpr int int_neqs = integrator_neqs<BurnT>();
     static_assert(C::stages <= 8, "Rosenbrock integrator stores up to 8 stages");
@@ -399,7 +464,14 @@ int rosenbrock_integrator (BurnT& state, rosenbrock_t<integrator_neqs<BurnT>()>&
     const amrex::Real posneg = rstate.tout >= rstate.t ? 1.0_rt : -1.0_rt;
     const amrex::Real hmax = amrex::min(integrator_rp::ode_max_dt,
                                         std::abs(rstate.tout - rstate.t));
-    amrex::Real h = amrex::min(std::abs(rstate.dt), hmax) * posneg;
+    amrex::Array1D<amrex::Real, 1, int_neqs> rhs_tmp;
+    const bool use_dt_suggest = rstate.use_initial_dt_suggest && rstate.initial_dt_suggest > 0.0_rt && std::isfinite(rstate.initial_dt_suggest);
+    amrex::Real h_est = 0.0_rt;
+    amrex::Real h_abs = amrex::min(std::abs(rstate.dt), hmax);
+    if (use_dt_suggest) {
+        h_abs = rstate.initial_dt_suggest;
+    }
+    amrex::Real h = amrex::min(h_abs, hmax) * posneg;
     if (std::abs(h) <= 10.0_rt * std::numeric_limits<amrex::Real>::epsilon()) {
         h = 1.e-6_rt * posneg;
     }
@@ -412,7 +484,31 @@ int rosenbrock_integrator (BurnT& state, rosenbrock_t<integrator_neqs<BurnT>()>&
     amrex::Real errold = 1.0_rt;
     amrex::Real hopt = h;
     amrex::Real x = rstate.t;
-    amrex::Array1D<amrex::Real, 1, int_neqs> rhs_tmp;
+
+#if !defined(AMREX_USE_GPU)
+    const bool trace_controller = state.debug_ode_controller;
+    if (trace_controller) {
+        std::cout << std::setprecision(16)
+                  << "[ODE-CTRL] begin cell=(" << state.i << "," << state.j << "," << state.k << ")"
+                  << " tout=" << rstate.tout
+                  << " h0=" << h
+                  << " h_est=" << h_est
+                  << " h_suggest=" << rstate.initial_dt_suggest
+                  << " use_h_suggest=" << rstate.use_initial_dt_suggest
+                  << " hmax=" << hmax
+                  << " tableau=" << integrator_rp::rosenbrock_tableau
+                  << " controller=" << integrator_rp::rosenbrock_timestep_controller
+                  << " rtol_spec=" << rstate.rtol_spec
+                  << " rtol_enuc=" << rstate.rtol_enuc
+#ifdef PHOTOCHEMISTRY
+                  << " rtol_rad_num=" << rstate.rtol_rad_num
+                  << " rtol_rad_flux=" << rstate.rtol_rad_flux
+                  << " atol_rad_num=" << rstate.atol_rad_num
+                  << " atol_rad_flux=" << rstate.atol_rad_flux
+#endif
+                  << "\n";
+    }
+#endif
 
     // main evolution loop
 
@@ -435,6 +531,17 @@ int rosenbrock_integrator (BurnT& state, rosenbrock_t<integrator_neqs<BurnT>()>&
         }
 
         if (last) {
+#if !defined(AMREX_USE_GPU)
+            if (trace_controller) {
+                std::cout << "[ODE-CTRL] done cell=(" << state.i << "," << state.j << "," << state.k << ")"
+                          << " n_step=" << rstate.n_step
+                          << " n_rhs=" << rstate.n_rhs
+                          << " n_jac=" << rstate.n_jac
+                          << " t=" << x
+                          << " next_dt=" << hopt
+                          << "\n";
+            }
+#endif
             rstate.t = x;
             rstate.dt = hopt;
             return IERR_SUCCESS;
@@ -486,6 +593,17 @@ int rosenbrock_integrator (BurnT& state, rosenbrock_t<integrator_neqs<BurnT>()>&
             int ierr_linpack = rosenbrock::decompose(rstate, fac);
 
             if (ierr_linpack != 0) {
+#if !defined(AMREX_USE_GPU)
+                if (trace_controller) {
+                    std::cout << "[ODE-CTRL] linpack-reject cell=(" << state.i << "," << state.j << "," << state.k << ")"
+                              << " n_step=" << rstate.n_step
+                              << " x=" << x
+                              << " h=" << h
+                              << " ierr=" << ierr_linpack
+                              << " nsing=" << nsing + 1
+                              << "\n";
+                }
+#endif
                 nsing += 1;
                 if (nsing >= 5) {
                     rstate.t = x;
@@ -502,19 +620,33 @@ int rosenbrock_integrator (BurnT& state, rosenbrock_t<integrator_neqs<BurnT>()>&
 
             bool valid_stage_state = true;
             for (int istage = 2; istage <= C::stages; ++istage) {
-                for (int n = 1; n <= int_neqs; ++n) {
-                    rstate.ynew(n) = rstate.y(n);
-                    rosenbrock::stage(rstate, istage, n) = 0.0_rt;
+                {
+                    ROSENBROCK_BL_PROFILE("Rosenbrock::stage_assembly()");
+                    for (int n = 1; n <= int_neqs; ++n) {
+                        rstate.ynew(n) = rstate.y(n);
+                        rosenbrock::stage(rstate, istage, n) = 0.0_rt;
 
-                    for (int jstage = 1; jstage < istage; ++jstage) {
-                        const amrex::Real akj = rosenbrock::stage(rstate, jstage, n);
-                        rstate.ynew(n) += C::a(istage, jstage) * akj;
-                        rosenbrock::stage(rstate, istage, n) +=
-                            (C::c(istage, jstage) / h) * akj;
+                        for (int jstage = 1; jstage < istage; ++jstage) {
+                            const amrex::Real akj = rosenbrock::stage(rstate, jstage, n);
+                            rstate.ynew(n) += C::a(istage, jstage) * akj;
+                            rosenbrock::stage(rstate, istage, n) +=
+                                (C::c(istage, jstage) / h) * akj;
+                        }
                     }
                 }
 
                 if (! rosenbrock::valid_integrator_state(rstate.ynew)) {
+#if !defined(AMREX_USE_GPU)
+                    if (trace_controller) {
+                        std::cout << "[ODE-CTRL] stage-state-reject cell=(" << state.i << "," << state.j << "," << state.k << ")"
+                                  << " n_step=" << rstate.n_step
+                                  << " stage=" << istage
+                                  << " x=" << x
+                                  << " h=" << h
+                                  << " h_new=" << 0.25_rt * h
+                                  << "\n";
+                    }
+#endif
                     h *= 0.25_rt;
                     reject = true;
                     n_reject += 1;
@@ -536,24 +668,37 @@ int rosenbrock_integrator (BurnT& state, rosenbrock_t<integrator_neqs<BurnT>()>&
                 continue;
             }
 
-            for (int n = 1; n <= int_neqs; ++n) {
-                amrex::Real y_update = 0.0_rt;
-                amrex::Real err = 0.0_rt;
+            {
+                ROSENBROCK_BL_PROFILE("Rosenbrock::solution_update()");
+                for (int n = 1; n <= int_neqs; ++n) {
+                    amrex::Real y_update = 0.0_rt;
+                    amrex::Real err = 0.0_rt;
 
-                for (int istage = 1; istage <= C::stages; ++istage) {
-                    const amrex::Real aki = rosenbrock::stage(rstate, istage, n);
-                    y_update += C::b(istage) * aki;
-                    err += C::e(istage) * aki;
+                    for (int istage = 1; istage <= C::stages; ++istage) {
+                        const amrex::Real aki = rosenbrock::stage(rstate, istage, n);
+                        y_update += C::b(istage) * aki;
+                        err += C::e(istage) * aki;
+                    }
+
+                    rstate.ynew(n) = rstate.y(n) + y_update;
+                    rstate.work(n) = err;
                 }
-
-                rstate.ynew(n) = rstate.y(n) + y_update;
-                rstate.work(n) = err;
             }
 
             rstate.n_step += 1;
 
             const bool valid_state = rosenbrock::valid_integrator_state(rstate.ynew);
             if (! valid_state) {
+#if !defined(AMREX_USE_GPU)
+                if (trace_controller) {
+                    std::cout << "[ODE-CTRL] final-state-reject cell=(" << state.i << "," << state.j << "," << state.k << ")"
+                              << " n_step=" << rstate.n_step
+                              << " x=" << x
+                              << " h=" << h
+                              << " h_new=" << 0.25_rt * h
+                              << "\n";
+                }
+#endif
                 reject = true;
                 n_reject += 1;
                 last = false;
@@ -563,22 +708,26 @@ int rosenbrock_integrator (BurnT& state, rosenbrock_t<integrator_neqs<BurnT>()>&
 
             const bool valid_update = rosenbrock::species_change_valid(rstate);
             constexpr amrex::Real err_min = 1.e-10_rt;
-            amrex::Real err = rosenbrock::error_norm(rstate);
+            amrex::Real err = 0.0_rt;
             amrex::Real controller_fac = 1.0_rt;
+            {
+                ROSENBROCK_BL_PROFILE("Rosenbrock::error_control()");
+                err = rosenbrock::error_norm(rstate);
 
-            if (integrator_rp::rosenbrock_timestep_controller == 1) {
-                err = rosenbrock::yass_change_norm(rstate);
-                controller_fac = amrex::Clamp(1.0_rt / amrex::max(err, err_min),
-                                              integrator_rp::yass_fac_min,
-                                              integrator_rp::yass_fac_max);
-            } else {
-                controller_fac = amrex::Clamp(
-                    std::pow(1.0_rt / amrex::max(err, err_min),
-                             1.0_rt / (integrator_rp::h211b_b * integrator_rp::h211b_k)) *
-                    std::pow(1.0_rt / amrex::max(errold, err_min),
-                             1.0_rt / (integrator_rp::h211b_b * integrator_rp::h211b_k)) *
-                    std::pow(facold, -1.0_rt / integrator_rp::h211b_b),
-                    integrator_rp::h211b_fac_min, integrator_rp::h211b_fac_max);
+                if (integrator_rp::rosenbrock_timestep_controller == 1) {
+                    err = rosenbrock::yass_change_norm(rstate);
+                    controller_fac = amrex::Clamp(1.0_rt / amrex::max(err, err_min),
+                                                  integrator_rp::yass_fac_min,
+                                                  integrator_rp::yass_fac_max);
+                } else {
+                    controller_fac = amrex::Clamp(
+                        std::pow(1.0_rt / amrex::max(err, err_min),
+                                 1.0_rt / (integrator_rp::h211b_b * integrator_rp::h211b_k)) *
+                        std::pow(1.0_rt / amrex::max(errold, err_min),
+                                 1.0_rt / (integrator_rp::h211b_b * integrator_rp::h211b_k)) *
+                        std::pow(facold, -1.0_rt / integrator_rp::h211b_b),
+                        integrator_rp::h211b_fac_min, integrator_rp::h211b_fac_max);
+                }
             }
             facold = controller_fac;
             errold = err;
@@ -589,6 +738,21 @@ int rosenbrock_integrator (BurnT& state, rosenbrock_t<integrator_neqs<BurnT>()>&
             // and predict the next timestep
 
             if (err <= 1.0_rt && valid_update) {
+#if !defined(AMREX_USE_GPU)
+                if (trace_controller) {
+                    std::cout << "[ODE-CTRL] accept cell=(" << state.i << "," << state.j << "," << state.k << ")"
+                              << " n_step=" << rstate.n_step
+                              << " x=" << x
+                              << " h=" << h
+                              << " err=" << err
+                              << " controller_fac=" << controller_fac
+                              << " h_candidate=" << hnew
+                              << " reject_history=" << reject
+                              << " n_rhs=" << rstate.n_rhs
+                              << " n_jac=" << rstate.n_jac
+                              << "\n";
+                }
+#endif
                 for (int n = 1; n <= int_neqs; ++n) {
                     rstate.y(n) = rstate.ynew(n);
                 }
@@ -624,6 +788,23 @@ int rosenbrock_integrator (BurnT& state, rosenbrock_t<integrator_neqs<BurnT>()>&
             } else {
                 h *= 0.25_rt;
             }
+#if !defined(AMREX_USE_GPU)
+            if (trace_controller) {
+                std::cout << "[ODE-CTRL] error-reject cell=(" << state.i << "," << state.j << "," << state.k << ")"
+                          << " n_step=" << rstate.n_step
+                          << " x=" << x
+                          << " h_old=" << rstate.dt
+                          << " err=" << err
+                          << " valid_update=" << valid_update
+                          << " controller_fac=" << controller_fac
+                          << " h_candidate=" << hnew
+                          << " h_retry=" << h
+                          << " n_reject=" << n_reject
+                          << " n_rhs=" << rstate.n_rhs
+                          << " n_jac=" << rstate.n_jac
+                          << "\n";
+            }
+#endif
         }
     }
 }

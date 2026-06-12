@@ -51,10 +51,8 @@ void dvhin (BurnT& state, DvodeT& vstate, amrex::Real& H0, int& NITER, int& IER)
             atol = vstate.atol_spec;
         } else if (i == NumSpec + 1) {
             atol = vstate.atol_enuc;
-        } else if ((i - NumSpec - 2) % MicrophysicsNumRadVarsPerGroup == 0) {
-            atol = vstate.atol_rad_num;
         } else {
-            atol = vstate.atol_rad_flux;
+            atol = vstate.atol_rad_num;
         }
 #else
         if (i <= NumSpec) {

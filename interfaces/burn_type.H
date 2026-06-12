@@ -165,11 +165,12 @@ struct burn_t
   bool nse{};
 #endif
 
-  // diagnostics
-  int n_rhs{}, n_jac{}, n_step{};
+	  // diagnostics
+	  int n_rhs{}, n_jac{}, n_step{};
+	  bool debug_ode_controller{};
 
-  // Was the burn successful?
-  bool success{};
+	  // Was the burn successful?
+	  bool success{};
 
   // integrator error code
   short error_code{};
