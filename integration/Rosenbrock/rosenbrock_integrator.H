@@ -383,6 +383,20 @@ int decompose (rosenbrock_t<int_neqs>& rstate, const amrex::Real fac)
 {
     ROSENBROCK_BL_PROFILE("Rosenbrock::decompose()");
 
+#ifdef PHOTOCHEMISTRY
+    if constexpr (int_neqs == 5) {
+        for (int j = 1; j <= int_neqs; ++j) {
+            for (int i = 1; i <= int_neqs; ++i) {
+                rstate.jac(i, j) = -rstate.jac(i, j);
+            }
+            rstate.jac(j, j) += fac;
+        }
+
+        dgefa5_nopivot(rstate.jac);
+        return 0;
+    }
+#endif
+
     for (int j = 1; j <= int_neqs; ++j) {
         for (int i = 1; i <= int_neqs; ++i) {
             rstate.jac(i, j) = -rstate.jac(i, j);
@@ -410,6 +424,13 @@ AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE
 void solve (rosenbrock_t<int_neqs>& rstate, RArray1D& b)
 {
     ROSENBROCK_BL_PROFILE("Rosenbrock::solve()");
+
+#ifdef PHOTOCHEMISTRY
+    if constexpr (int_neqs == 5) {
+        dgesl5_nopivot(rstate.jac, b);
+        return;
+    }
+#endif
 
     {
         ROSENBROCK_BL_PROFILE("Rosenbrock::dgesl()");

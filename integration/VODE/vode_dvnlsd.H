@@ -115,6 +115,11 @@ amrex::Real dvnlsd (int& NFLAG, BurnT& state, DvodeT& vstate)
 #ifdef NEW_NETWORK_IMPLEMENTATION
             RHS::dgesl(vstate.jac, vstate.y);
 #else
+#ifdef PHOTOCHEMISTRY
+            if constexpr (int_neqs == 5) {
+                dgesl5_nopivot(vstate.jac, vstate.y);
+            } else
+#endif
             if (integrator_rp::linalg_do_pivoting == 1) {
                 constexpr bool allow_pivot{true};
                 dgesl<int_neqs, allow_pivot>(vstate.jac, vstate.pivot, vstate.y);

@@ -145,4 +145,122 @@ void dgefa (RArray2D& a, IArray1D& pivot, int& info)
 
 }
 
+AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE
+void dgesl5_nopivot (const RArray2D& a, RArray1D& b)
+{
+    amrex::Real t = b(1);
+    b(2) += t * a.arr[1];
+    b(3) += t * a.arr[2];
+    b(4) += t * a.arr[3];
+    b(5) += t * a.arr[4];
+
+    t = b(2);
+    b(3) += t * a.arr[7];
+    b(4) += t * a.arr[8];
+    b(5) += t * a.arr[9];
+
+    t = b(3);
+    b(4) += t * a.arr[13];
+    b(5) += t * a.arr[14];
+
+    t = b(4);
+    b(5) += t * a.arr[19];
+
+    b(5) /= a.arr[24];
+    t = -b(5);
+    b(1) += t * a.arr[20];
+    b(2) += t * a.arr[21];
+    b(3) += t * a.arr[22];
+    b(4) += t * a.arr[23];
+
+    b(4) /= a.arr[18];
+    t = -b(4);
+    b(1) += t * a.arr[15];
+    b(2) += t * a.arr[16];
+    b(3) += t * a.arr[17];
+
+    b(3) /= a.arr[12];
+    t = -b(3);
+    b(1) += t * a.arr[10];
+    b(2) += t * a.arr[11];
+
+    b(2) /= a.arr[6];
+    t = -b(2);
+    b(1) += t * a.arr[5];
+
+    b(1) /= a.arr[0];
+}
+
+AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE
+void dgefa5_nopivot (RArray2D& a)
+{
+    amrex::Real multiplier = -1.0e0_rt / a.arr[0];
+    a.arr[1] *= multiplier;
+    a.arr[2] *= multiplier;
+    a.arr[3] *= multiplier;
+    a.arr[4] *= multiplier;
+
+    amrex::Real t = a.arr[5];
+    a.arr[6] += t * a.arr[1];
+    a.arr[7] += t * a.arr[2];
+    a.arr[8] += t * a.arr[3];
+    a.arr[9] += t * a.arr[4];
+
+    t = a.arr[10];
+    a.arr[11] += t * a.arr[1];
+    a.arr[12] += t * a.arr[2];
+    a.arr[13] += t * a.arr[3];
+    a.arr[14] += t * a.arr[4];
+
+    t = a.arr[15];
+    a.arr[16] += t * a.arr[1];
+    a.arr[17] += t * a.arr[2];
+    a.arr[18] += t * a.arr[3];
+    a.arr[19] += t * a.arr[4];
+
+    t = a.arr[20];
+    a.arr[21] += t * a.arr[1];
+    a.arr[22] += t * a.arr[2];
+    a.arr[23] += t * a.arr[3];
+    a.arr[24] += t * a.arr[4];
+
+    multiplier = -1.0e0_rt / a.arr[6];
+    a.arr[7] *= multiplier;
+    a.arr[8] *= multiplier;
+    a.arr[9] *= multiplier;
+
+    t = a.arr[11];
+    a.arr[12] += t * a.arr[7];
+    a.arr[13] += t * a.arr[8];
+    a.arr[14] += t * a.arr[9];
+
+    t = a.arr[16];
+    a.arr[17] += t * a.arr[7];
+    a.arr[18] += t * a.arr[8];
+    a.arr[19] += t * a.arr[9];
+
+    t = a.arr[21];
+    a.arr[22] += t * a.arr[7];
+    a.arr[23] += t * a.arr[8];
+    a.arr[24] += t * a.arr[9];
+
+    multiplier = -1.0e0_rt / a.arr[12];
+    a.arr[13] *= multiplier;
+    a.arr[14] *= multiplier;
+
+    t = a.arr[17];
+    a.arr[18] += t * a.arr[13];
+    a.arr[19] += t * a.arr[14];
+
+    t = a.arr[22];
+    a.arr[23] += t * a.arr[13];
+    a.arr[24] += t * a.arr[14];
+
+    multiplier = -1.0e0_rt / a.arr[18];
+    a.arr[19] *= multiplier;
+
+    t = a.arr[23];
+    a.arr[24] += t * a.arr[19];
+}
+
 #endif

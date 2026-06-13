@@ -161,11 +161,17 @@ void dvjac (int& IERPJ, BurnT& state, DvodeT& vstate)
     vstate.jac.mul(con);
     vstate.jac.add_identity();
 
-    int IER{};
-
 #ifdef NEW_NETWORK_IMPLEMENTATION
+    int IER{};
     IER = RHS::dgefa(vstate.jac);
 #else
+#ifdef PHOTOCHEMISTRY
+    if constexpr (int_neqs == 5) {
+        dgefa5_nopivot(vstate.jac);
+        return;
+    }
+#endif
+    int IER{};
     if (integrator_rp::linalg_do_pivoting == 1) {
         constexpr bool allow_pivot{true};
         dgefa<int_neqs, allow_pivot>(vstate.jac, vstate.pivot, IER);
