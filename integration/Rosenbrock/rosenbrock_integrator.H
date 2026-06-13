@@ -486,13 +486,7 @@ int rosenbrock_integrator (BurnT& state, rosenbrock_t<integrator_neqs<BurnT>()>&
     const amrex::Real hmax = amrex::min(integrator_rp::ode_max_dt,
                                         std::abs(rstate.tout - rstate.t));
     amrex::Array1D<amrex::Real, 1, int_neqs> rhs_tmp;
-    const bool use_dt_suggest = rstate.use_initial_dt_suggest && rstate.initial_dt_suggest > 0.0_rt && std::isfinite(rstate.initial_dt_suggest);
-    amrex::Real h_est = 0.0_rt;
-    amrex::Real h_abs = amrex::min(std::abs(rstate.dt), hmax);
-    if (use_dt_suggest) {
-        h_abs = rstate.initial_dt_suggest;
-    }
-    amrex::Real h = amrex::min(h_abs, hmax) * posneg;
+    amrex::Real h = amrex::min(std::abs(rstate.dt), hmax) * posneg;
     if (std::abs(h) <= 10.0_rt * std::numeric_limits<amrex::Real>::epsilon()) {
         h = 1.e-6_rt * posneg;
     }
@@ -513,9 +507,6 @@ int rosenbrock_integrator (BurnT& state, rosenbrock_t<integrator_neqs<BurnT>()>&
                   << "[ODE-CTRL] begin cell=(" << state.i << "," << state.j << "," << state.k << ")"
                   << " tout=" << rstate.tout
                   << " h0=" << h
-                  << " h_est=" << h_est
-                  << " h_suggest=" << rstate.initial_dt_suggest
-                  << " use_h_suggest=" << rstate.use_initial_dt_suggest
                   << " hmax=" << hmax
                   << " tableau=" << integrator_rp::rosenbrock_tableau
                   << " controller=" << integrator_rp::rosenbrock_timestep_controller
