@@ -315,10 +315,10 @@ int decompose (rosenbrock_t<int_neqs>& rstate, const amrex::Real fac)
     int ierr_linpack = 0;
     if (integrator_rp::linalg_do_pivoting == 1) {
         constexpr bool allow_pivot{true};
-        dgefa<int_neqs, allow_pivot>(rstate.jac, rstate.pivot, ierr_linpack);
+        lu_decompose<int_neqs, allow_pivot>(rstate.jac, rstate.pivot, ierr_linpack);
     } else {
         constexpr bool allow_pivot{false};
-        dgefa<int_neqs, allow_pivot>(rstate.jac, rstate.pivot, ierr_linpack);
+        lu_decompose<int_neqs, allow_pivot>(rstate.jac, rstate.pivot, ierr_linpack);
     }
 
     return ierr_linpack;
@@ -330,10 +330,10 @@ void solve (rosenbrock_t<int_neqs>& rstate, RArray1D& b)
 {
     if (integrator_rp::linalg_do_pivoting == 1) {
         constexpr bool allow_pivot{true};
-        dgesl<int_neqs, allow_pivot>(rstate.jac, rstate.pivot, b);
+        lu_solve<int_neqs, allow_pivot>(rstate.jac, rstate.pivot, b);
     } else {
         constexpr bool allow_pivot{false};
-        dgesl<int_neqs, allow_pivot>(rstate.jac, rstate.pivot, b);
+        lu_solve<int_neqs, allow_pivot>(rstate.jac, rstate.pivot, b);
     }
 }
 

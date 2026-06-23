@@ -168,10 +168,10 @@ void dvjac (int& IERPJ, BurnT& state, DvodeT& vstate)
 #else
     if (integrator_rp::linalg_do_pivoting == 1) {
         constexpr bool allow_pivot{true};
-        dgefa<int_neqs, allow_pivot>(vstate.jac, vstate.pivot, IER);
+        lu_decompose<int_neqs, allow_pivot>(vstate.jac, vstate.pivot, IER);
     } else {
         constexpr bool allow_pivot{false};
-        dgefa<int_neqs, allow_pivot>(vstate.jac, vstate.pivot, IER);
+        lu_decompose<int_neqs, allow_pivot>(vstate.jac, vstate.pivot, IER);
     }
 #endif
 

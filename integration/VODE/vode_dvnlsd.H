@@ -117,10 +117,10 @@ amrex::Real dvnlsd (int& NFLAG, BurnT& state, DvodeT& vstate)
 #else
             if (integrator_rp::linalg_do_pivoting == 1) {
                 constexpr bool allow_pivot{true};
-                dgesl<int_neqs, allow_pivot>(vstate.jac, vstate.pivot, vstate.y);
+                lu_solve<int_neqs, allow_pivot>(vstate.jac, vstate.pivot, vstate.y);
             } else {
                 constexpr bool allow_pivot{false};
-                dgesl<int_neqs, allow_pivot>(vstate.jac, vstate.pivot, vstate.y);
+                lu_solve<int_neqs, allow_pivot>(vstate.jac, vstate.pivot, vstate.y);
             }
 #endif
 
