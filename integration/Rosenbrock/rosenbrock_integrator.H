@@ -165,13 +165,20 @@ AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE
 amrex::Real error_norm (const rosenbrock_t<int_neqs>& rstate)
 {
     amrex::Real err = 0.0_rt;
+    int n_terms = 0;
     for (int n = 1; n <= int_neqs; ++n) {
+#ifdef PHOTOCHEMISTRY
+        if (n > net_ienuc && ((n - (net_ienuc + 1)) % MicrophysicsNumRadVarsPerGroup) != 0) {
+            continue;
+        }
+#endif
         const amrex::Real sk = atol_for(rstate, n) +
             rtol_for(rstate, n) * amrex::max(std::abs(rstate.y(n)), std::abs(rstate.ynew(n)));
         const amrex::Real term = rstate.work(n) / sk;
         err += term * term;
+        n_terms += 1;
     }
-    return std::sqrt(err / static_cast<amrex::Real>(int_neqs));
+    return std::sqrt(err / static_cast<amrex::Real>(n_terms));
 }
 
 template <int int_neqs>
@@ -235,6 +242,14 @@ bool valid_integrator_state (const amrex::Array1D<amrex::Real, 1, int_neqs>& y)
 
     if (y(net_ienuc) <= 0.0_rt) {
         return false;
+    }
+#endif
+
+#ifdef PHOTOCHEMISTRY
+    for (int n = net_ienuc + 1; n <= int_neqs; n += MicrophysicsNumRadVarsPerGroup) {
+        if (y(n) < -integrator_rp::radiation_failure_tolerance) {
+            return false;
+        }
     }
 #endif
 
