@@ -115,17 +115,12 @@ amrex::Real dvnlsd (int& NFLAG, BurnT& state, DvodeT& vstate)
 #ifdef NEW_NETWORK_IMPLEMENTATION
             RHS::dgesl(vstate.jac, vstate.y);
 #else
-#ifdef PHOTOCHEMISTRY
-            if constexpr (int_neqs == 5) {
-                dgesl5_nopivot(vstate.jac, vstate.y);
-            } else
-#endif
             if (integrator_rp::linalg_do_pivoting == 1) {
                 constexpr bool allow_pivot{true};
-                dgesl<int_neqs, allow_pivot>(vstate.jac, vstate.pivot, vstate.y);
+                lu_solve<int_neqs, allow_pivot>(vstate.jac, vstate.pivot, vstate.y);
             } else {
                 constexpr bool allow_pivot{false};
-                dgesl<int_neqs, allow_pivot>(vstate.jac, vstate.pivot, vstate.y);
+                lu_solve<int_neqs, allow_pivot>(vstate.jac, vstate.pivot, vstate.y);
             }
 #endif
 
@@ -138,6 +133,10 @@ amrex::Real dvnlsd (int& NFLAG, BurnT& state, DvodeT& vstate)
 
             DEL = 0.0_rt;
             for (int i = 1; i <= int_neqs; ++i) {
+#ifdef PHOTOCHEMISTRY
+                // skip radiation flux -- passive scalar, one-way coupled
+                if (i > net_ienuc && (i - net_ienuc - 1) % MicrophysicsNumRadVarsPerGroup != 0) continue;
+#endif
                 DEL += (vstate.y(i) * vstate.ewt(i)) * (vstate.y(i) * vstate.ewt(i));
             }
             DEL = std::sqrt(DEL / int_neqs);
@@ -238,6 +237,10 @@ amrex::Real dvnlsd (int& NFLAG, BurnT& state, DvodeT& vstate)
     if (M > 0) {
         ACNRM = 0.0_rt;
         for (int i = 1; i <= int_neqs; ++i) {
+#ifdef PHOTOCHEMISTRY
+            // skip radiation flux -- passive scalar, one-way coupled
+            if (i > net_ienuc && (i - net_ienuc - 1) % MicrophysicsNumRadVarsPerGroup != 0) continue;
+#endif
             ACNRM += (vstate.acor(i) * vstate.ewt(i)) * (vstate.acor(i) * vstate.ewt(i));
         }
         ACNRM = std::sqrt(ACNRM / int_neqs);

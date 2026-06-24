@@ -101,10 +101,17 @@ void dvjac (int& IERPJ, BurnT& state, DvodeT& vstate)
             vstate.JCUR = 1;
 
             amrex::Real fac = 0.0_rt;
+            int n_terms = 0;
             for (int i = 1; i <= int_neqs; ++i) {
+#ifdef PHOTOCHEMISTRY
+                if (i > net_ienuc && (i - net_ienuc - 1) % MicrophysicsNumRadVarsPerGroup != 0) {
+                    continue;
+                }
+#endif
                 fac += (vstate.savf(i) * vstate.ewt(i)) * (vstate.savf(i) * vstate.ewt(i));
+                n_terms += 1;
             }
-            fac = std::sqrt(fac / int_neqs);
+            fac = std::sqrt(fac / static_cast<amrex::Real>(n_terms));
 
             amrex::Real R0 = 1000.0_rt * std::abs(vstate.H) * UROUND * int_neqs * fac;
             if (R0 == 0.0_rt) {
@@ -113,6 +120,14 @@ void dvjac (int& IERPJ, BurnT& state, DvodeT& vstate)
 
             constexpr bool in_jacobian = true;
             for (int j = 1; j <= int_neqs; ++j) {
+#ifdef PHOTOCHEMISTRY
+                if (j > net_ienuc && (j - net_ienuc - 1) % MicrophysicsNumRadVarsPerGroup != 0) {
+                    for (int i = 1; i <= int_neqs; ++i) {
+                        vstate.jac.set(i, j, 0.0_rt);
+                    }
+                    continue;
+                }
+#endif
                 const amrex::Real yj = vstate.y(j);
 
                 const amrex::Real R = amrex::max(std::sqrt(UROUND) * std::abs(yj), R0 / vstate.ewt(j));
@@ -165,19 +180,13 @@ void dvjac (int& IERPJ, BurnT& state, DvodeT& vstate)
     int IER{};
     IER = RHS::dgefa(vstate.jac);
 #else
-#ifdef PHOTOCHEMISTRY
-    if constexpr (int_neqs == 5) {
-        dgefa5_nopivot(vstate.jac);
-        return;
-    }
-#endif
     int IER{};
     if (integrator_rp::linalg_do_pivoting == 1) {
         constexpr bool allow_pivot{true};
-        dgefa<int_neqs, allow_pivot>(vstate.jac, vstate.pivot, IER);
+        lu_decompose<int_neqs, allow_pivot>(vstate.jac, vstate.pivot, IER);
     } else {
         constexpr bool allow_pivot{false};
-        dgefa<int_neqs, allow_pivot>(vstate.jac, vstate.pivot, IER);
+        lu_decompose<int_neqs, allow_pivot>(vstate.jac, vstate.pivot, IER);
     }
 #endif
 

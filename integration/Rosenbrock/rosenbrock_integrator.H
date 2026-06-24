@@ -365,20 +365,6 @@ int decompose (rosenbrock_t<int_neqs>& rstate, const amrex::Real fac)
 {
     ROSENBROCK_BL_PROFILE("Rosenbrock::decompose()");
 
-#ifdef PHOTOCHEMISTRY
-    if constexpr (int_neqs == 5) {
-        for (int j = 1; j <= int_neqs; ++j) {
-            for (int i = 1; i <= int_neqs; ++i) {
-                rstate.jac(i, j) = -rstate.jac(i, j);
-            }
-            rstate.jac(j, j) += fac;
-        }
-
-        dgefa5_nopivot(rstate.jac);
-        return 0;
-    }
-#endif
-
     for (int j = 1; j <= int_neqs; ++j) {
         for (int i = 1; i <= int_neqs; ++i) {
             rstate.jac(i, j) = -rstate.jac(i, j);
@@ -391,10 +377,10 @@ int decompose (rosenbrock_t<int_neqs>& rstate, const amrex::Real fac)
         ROSENBROCK_BL_PROFILE("Rosenbrock::dgefa()");
         if (integrator_rp::linalg_do_pivoting == 1) {
             constexpr bool allow_pivot{true};
-            dgefa<int_neqs, allow_pivot>(rstate.jac, rstate.pivot, ierr_linpack);
+            lu_decompose<int_neqs, allow_pivot>(rstate.jac, rstate.pivot, ierr_linpack);
         } else {
             constexpr bool allow_pivot{false};
-            dgefa<int_neqs, allow_pivot>(rstate.jac, rstate.pivot, ierr_linpack);
+            lu_decompose<int_neqs, allow_pivot>(rstate.jac, rstate.pivot, ierr_linpack);
         }
     }
 
@@ -407,21 +393,14 @@ void solve (rosenbrock_t<int_neqs>& rstate, RArray1D& b)
 {
     ROSENBROCK_BL_PROFILE("Rosenbrock::solve()");
 
-#ifdef PHOTOCHEMISTRY
-    if constexpr (int_neqs == 5) {
-        dgesl5_nopivot(rstate.jac, b);
-        return;
-    }
-#endif
-
     {
         ROSENBROCK_BL_PROFILE("Rosenbrock::dgesl()");
         if (integrator_rp::linalg_do_pivoting == 1) {
             constexpr bool allow_pivot{true};
-            dgesl<int_neqs, allow_pivot>(rstate.jac, rstate.pivot, b);
+            lu_solve<int_neqs, allow_pivot>(rstate.jac, rstate.pivot, b);
         } else {
             constexpr bool allow_pivot{false};
-            dgesl<int_neqs, allow_pivot>(rstate.jac, rstate.pivot, b);
+            lu_solve<int_neqs, allow_pivot>(rstate.jac, rstate.pivot, b);
         }
     }
 }
