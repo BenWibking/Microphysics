@@ -197,10 +197,14 @@ void integrator_cleanup (IntegratorT& int_state, BurnT& state,
         }
     }
 #ifdef PHOTOCHEMISTRY
+    const amrex::Real final_state_radiation_failure_tolerance =
+        final_state_radiation_failure_tolerance_factor * integrator_rp::radiation_failure_tolerance;
+
     for (int n = net_ienuc+1; n <= net_ienuc+NumRadEqs; n += MicrophysicsNumRadVarsPerGroup) {
-        if (int_state.y(n) < -integrator_rp::radiation_failure_tolerance) {
+        if (int_state.y(n) < -final_state_radiation_failure_tolerance) {
             state.success = false;
         }
+        int_state.y(n) = amrex::max(int_state.y(n), integrator_rp::SMALL_X_SAFE);
     }
 #endif
 

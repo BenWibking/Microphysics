@@ -141,16 +141,11 @@ AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE
 amrex::Real rtol_for (const RosenbrockT& rstate, const int n)
 {
 #ifdef PHOTOCHEMISTRY
-    if (n <= NumSpec) {
-        return rstate.rtol_spec;
+    if (n > net_ienuc && ((n - (net_ienuc + 1)) % MicrophysicsNumRadVarsPerGroup) == 0) {
+        return rstate.rtol_rad_num;
     }
-    if (n == net_ienuc) {
-        return rstate.rtol_enuc;
-    }
-    return rstate.rtol_rad_num;
-#else
-    return n == net_ienuc ? rstate.rtol_enuc : rstate.rtol_spec;
 #endif
+    return n == net_ienuc ? rstate.rtol_enuc : rstate.rtol_spec;
 }
 
 template <typename RosenbrockT>
@@ -158,16 +153,11 @@ AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE
 amrex::Real atol_for (const RosenbrockT& rstate, const int n)
 {
 #ifdef PHOTOCHEMISTRY
-    if (n <= NumSpec) {
-        return rstate.atol_spec;
+    if (n > net_ienuc && ((n - (net_ienuc + 1)) % MicrophysicsNumRadVarsPerGroup) == 0) {
+        return rstate.atol_rad_num;
     }
-    if (n == net_ienuc) {
-        return rstate.atol_enuc;
-    }
-    return rstate.atol_rad_num;
-#else
-    return n == net_ienuc ? rstate.atol_enuc : rstate.atol_spec;
 #endif
+    return n == net_ienuc ? rstate.atol_enuc : rstate.atol_spec;
 }
 
 template <int int_neqs>
