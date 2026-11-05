@@ -77,6 +77,26 @@ stock and Loom in the same process. Stock hipcc uses 512 registers (VGPR +
 AGPR) and 22 KB scratch; Loom 0.1.0 is capped at 256 VGPRs with no AGPR
 spill space. The candidates tried and rejected are in the agent notes.
 
+The same tree compiled with tools from hrx-system main `cfd80e56de`
+(2026-11-05; md5 06f1888e) takes 250 s, 256 VGPR / 50,680 B, and is
+bit-exact against stock HIP on all 4096 zones for the default inputs,
+quantum corrections, the prad limiter, `linalg_do_pivoting=0`,
+`jacobian=2`, burn retry and the Debye-Hueckel skip (moth).
+
+On Setonix (Pawsey; one MI250X GCD, gfx90a; `gpu-dev` job 52278900,
+2026-11-05), with stock test_react built there with the same ROCm 10.1
+hipcc and AMReX, both code objects are bit-exact against stock HIP. Each
+process ran 3 stock/Loom pairs at full tmax (fastest of each shown), and
+the two code objects alternated over 3 processes each:
+
+| Kernel | Stock HIP ms | Loom ms | Loom / stock |
+|---|---|---|---|
+| Loom 0.1.0 (deed71e3) | 30,234 / 29,931 / 30,466 | 37,096 / 38,308 / 36,977 | median 1.23 (1.21-1.28) |
+| main `cfd80e56de` (06f1888e) | 30,592 / 29,744 / 30,473 | 36,733 / 37,679 / 37,247 | median 1.22 (1.20-1.27) |
+
+The two Loom builds are within noise of each other (0.98-1.01, paired by
+round; run-to-run spread about 4%).
+
 ## Validation
 
 `agent-notes/08-loom-ase-iron-rosenbrock/scripts/val.sh <set> "<-DLOOM_VALIDATE_* flags>"`
