@@ -7,3 +7,18 @@ temp_max      real       1.e15
 
 tmax          real       0.1e0
 
+# run the native validators of the Loom burn-kernel translation instead of
+# the burn (requires building with USE_LOOM_VALIDATE=TRUE)
+loom_validate int 0
+
+# Loom burn kernel launcher (requires building with USE_HIP=TRUE
+# USE_LOOM_BURN=TRUE; see loom_launch.H). Empty loom_hsaco = stock burn.
+loom_hsaco    string     ""
+# kernel symbol in the code object (check with llvm-readelf --syms)
+loom_kernel   string     "mpl.burn_zones"
+# zones per box the code object was compiled for (abort on mismatch)
+loom_ncells   int        0
+# 1: run stock and Loom burns alternately and compare bit for bit
+loom_compare  int        0
+# number of Loom burns (or stock/Loom pairs with loom_compare, at least 2)
+loom_repeats  int        1

@@ -6,3 +6,16 @@ CEXE_headers += variables.H
 CEXE_sources += variables.cpp
 CEXE_headers += react_zones.H
 
+
+ifeq ($(USE_LOOM_VALIDATE), TRUE)
+  CEXE_sources += loom_validate.cpp
+  CEXE_headers += loom_validate.H
+  CEXE_headers += loom_eos_params.H
+  CEXE_headers += loom_params.H
+endif
+
+ifeq ($(USE_LOOM_BURN), TRUE)
+  CEXE_headers += loom_launch.H
+  CEXE_headers += loom_eos_params.H
+  CEXE_headers += loom_params.H
+endif

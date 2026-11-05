@@ -18,6 +18,12 @@ using namespace amrex;
 #include <variables.H>
 #include <unit_test.H>
 #include <react_util.H>
+#ifdef LOOM_VALIDATE
+#include <loom_validate.H>
+#endif
+#ifdef MICROPHYSICS_LOOM
+#include <loom_launch.H>
+#endif
 
 int main (int argc, char* argv[])
 {
@@ -110,6 +116,16 @@ void main_main ()
     // C++ Network, RHS, screening, rates initialization
     network_init();
 
+#ifdef LOOM_VALIDATE
+    // native validation of the Loom kernel translation (loom_validate.cpp)
+    if (unit_test_rp::loom_validate) {
+        if (loom_validate() != 0) {
+            amrex::Abort("LOOM_VALIDATE: mismatches");
+        }
+        return;
+    }
+#endif
+
     plot_t vars;
     vars = init_variables();
     amrex::Vector<std::string> names;
@@ -193,6 +209,14 @@ void main_main ()
 
     ValLocPair<int, burn_t> r;
 
+#ifdef MICROPHYSICS_LOOM
+    // Loom (hrx-system) burn kernel instead of the ParReduce below
+    // (loom_launch.H); stock path when unit_test.loom_hsaco is empty
+    if (!unit_test_rp::loom_hsaco.empty()) {
+        BL_PROFILE("do_react_loom");
+        r = loom_burn_main(state, integrator_n_rhs, vars, names, num_failed_d);
+    } else
+#endif
     {
         BL_PROFILE("do_react");
 
